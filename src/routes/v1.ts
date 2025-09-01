@@ -2,9 +2,9 @@ import { Router } from 'express';
 import auth from '../app/middlewares/auth';
 import AdminRoutes from '../app/modules/admin/Admin.route';
 import { AuthRoutes } from '../app/modules/auth/Auth.route';
-import { ChatRoutes } from '../app/modules/chat/Chat.route';
 import { UserRoutes } from '../app/modules/user/User.route';
 import { StatusCodes } from 'http-status-codes';
+import { ContextPageRoutes } from '../app/modules/contextPage/ContextPage.route';
 
 const appRouter = Router();
 
@@ -18,20 +18,19 @@ const appRouter = Router();
   ),
 );
 
-appRouter.inject([
+export default appRouter.inject([
+  {
+    path: '/context-pages',
+    route: ContextPageRoutes.user,
+  },
+
   {
     path: '/auth',
     route: AuthRoutes,
   },
   {
     path: '/profile',
-    middlewares: [auth()],
     route: UserRoutes.user,
-  },
-  {
-    path: '/chats',
-    middlewares: [auth()],
-    route: ChatRoutes,
   },
   {
     path: '/admin',
@@ -39,5 +38,3 @@ appRouter.inject([
     route: AdminRoutes,
   },
 ]);
-
-export default appRouter;

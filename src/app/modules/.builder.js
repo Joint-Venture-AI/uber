@@ -11,40 +11,27 @@ import purifyRequest from '../../middlewares/purifyRequest';
 const router = Router();
 
 router.post(
-  '/',
+  '/create',
   purifyRequest(${mName}Validations.create),
   ${mName}Controllers.create,
 );
 
 export const ${mName}Routes = router;`,
 
-  interface: mName => /*javascript*/ `import { Types } from 'mongoose';
+  interface: mName => /*javascript*/ `export type T${mName} = {};`,
 
-export type T${mName} = {
-  _id?: Types.ObjectId;
+  model: mName => `model ${mName} {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt?: Date;
-  updatedAt?: Date;
-};`,
-
-  model: mName => /*javascript*/ `import { Schema, model } from 'mongoose';
-import { T${mName} } from './${mName}.interface';
-import { ${mName}Middlewares } from './${mName}.middleware';
-
-const ${mName[0].toLowerCase()}${mName.slice(1)}Schema = new Schema<T${mName}>(
-  {},
-  { timestamps: true, versionKey: false },
-);
-
-${mName}Middlewares.schema(${mName[0].toLowerCase()}${mName.slice(1)}Schema);
-
-const ${mName} = model<T${mName}>('${mName}', ${mName[0].toLowerCase()}${mName.slice(1)}Schema);
-
-export default ${mName};`,
+  @@map("${mName[0].toLowerCase()}${mName.slice(1)}s")
+}
+`,
 
   controller:
     mName => /*javascript*/ `import { StatusCodes } from 'http-status-codes';
-import catchAsync from '../../../util/server/catchAsync';
+import catchAsync from '../../middlewares/catchAsync';
 import serveResponse from '../../../util/server/serveResponse';
 import { ${mName}Services } from './${mName}.service';
 
@@ -60,10 +47,7 @@ export const ${mName}Controllers = {
   }),
 };`,
 
-  service:
-    mName => /*javascript*/ `import { T${mName} } from './${mName}.interface';
-import ${mName} from './${mName}.model';
-
+  service: mName => /*javascript*/ `
 export const ${mName}Services = {
   async create(${mName[0].toLowerCase()}${mName.slice(1)}Data: T${mName}) {
     return ${mName}.create(${mName[0].toLowerCase()}${mName.slice(1)}Data);
@@ -78,29 +62,7 @@ export const ${mName}Validations = {
   }),
 };`,
 
-  middleware: mName => /*javascript*/ `import { Schema } from 'mongoose';
-import { T${mName} } from './${mName}.interface';
-
-export const ${mName}Middlewares = {
-  schema: (schema: Schema<T${mName}>) => {
-    ${['save', 'findOneAndDelete', 'findOneAndUpdate']
-      .map(event =>
-        ['pre', 'post']
-          .map(
-            fn => /*javascript*/ `
-    schema.${fn}('${event}', async function (${fn === 'pre' ? 'next' : 'doc, next'}) {
-      try {
-        // Do something ${fn === 'pre' ? 'before' : 'after'} ${event}
-      } finally {
-        next();
-      }
-    });`,
-          )
-          .join('\n'),
-      )
-      .join('\n')}
-  },
-};`,
+  middleware: mName => /*javascript*/ `export const ${mName}Middlewares = {};`,
 
   utils: () => '',
 
@@ -124,9 +86,9 @@ inquirer
       message: 'Select files to create (default is all selected):',
       choices: [
         { name: 'Route', value: 'route', checked: true },
-        { name: 'Interface', value: 'interface', checked: true },
+        { name: 'Interface', value: 'interface', checked: false },
         { name: 'Model', value: 'model', checked: true },
-        { name: 'Middleware', value: 'middleware', checked: true },
+        { name: 'Middleware', value: 'middleware', checked: false },
         { name: 'Controller', value: 'controller', checked: true },
         { name: 'Service', value: 'service', checked: true },
         { name: 'Validation', value: 'validation', checked: true },
@@ -154,7 +116,7 @@ inquirer
       filesToCreate.forEach(fileType => {
         const filePath = path.join(
           folderPath,
-          `${capitalizedMName}.${fileType}.ts`,
+          `${capitalizedMName}.${fileType}.${fileType === 'model' ? 'prisma' : 'ts'}`,
         );
 
         const fileContent = fileTemplates[fileType](capitalizedMName) + '\n';

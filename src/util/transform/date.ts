@@ -1,6 +1,6 @@
-export const date = (str: string) => {
+export const date = (str?: string) => {
   try {
-    return new Date(str);
+    if (str) return new Date(str);
   } catch {
     return;
   }

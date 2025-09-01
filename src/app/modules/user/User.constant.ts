@@ -1,9 +1,3 @@
-import { TUser } from './User.interface';
+import { User as TUser } from '../../../../prisma';
 
-export const userSearchableFields: (keyof TUser)[] = [
-  'name',
-  'email',
-  'phone',
-  'gender',
-  'role',
-];
+export const userSearchableFields: (keyof TUser)[] = ['name', 'email', 'phone'];

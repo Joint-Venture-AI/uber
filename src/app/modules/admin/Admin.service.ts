@@ -1,10 +1,9 @@
 import colors from 'colors';
 import { errorLogger } from '../../../util/logger/logger';
-import User from '../user/User.model';
 import { logger } from '../../../util/logger/logger';
 import config from '../../../config';
-import { EUserRole } from '../user/User.enum';
-import { UserServices } from '../user/User.service';
+import prisma from '../../../util/prisma';
+import { EUserRole } from '../../../../prisma';
 
 export const AdminServices = {
   /**
@@ -15,20 +14,30 @@ export const AdminServices = {
    * Otherwise, it creates a new admin user with the provided admin data.
    */
   async seed() {
-    const adminData = config.admin;
+    const { name, email, password } = config.admin;
 
     try {
-      const admin = await User.exists({
-        email: adminData.email,
+      const admin = await prisma.user.findFirst({
+        where: { email },
       });
 
-      if (admin) return;
+      if (admin?.role === EUserRole.ADMIN) return;
 
       logger.info(colors.green('🔑 admin creation started...'));
 
-      await UserServices.create({
-        ...adminData,
-        role: EUserRole.ADMIN,
+      await prisma.user.upsert({
+        where: { email },
+        update: { role: EUserRole.ADMIN },
+        create: {
+          name,
+          email,
+          role: EUserRole.ADMIN,
+          Auth: {
+            create: {
+              password: await password?.hash(),
+            },
+          },
+        },
       });
 
       logger.info(colors.green('✔ admin created successfully!'));

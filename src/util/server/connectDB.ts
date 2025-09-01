@@ -1,17 +1,19 @@
-import { connect } from 'mongoose';
-import config from '../../config';
+import { GridFSBucket, MongoClient } from 'mongodb';
 import colors from 'colors';
-import { errorLogger, logger } from '../logger/logger';
+import config from '../../config';
+import { logger } from '../logger/logger';
 
-/**
- * Connects to the database
- */
+let client: MongoClient | null = null;
+let bucket: GridFSBucket | null = null;
+
 export default async function connectDB() {
-  try {
-    await connect(config.url.database as string);
-    logger.info(colors.green('🚀 Database connected successfully'));
-  } catch (error) {
-    errorLogger.error(colors.red('❌ Database connection failed!'), error);
-    process.exit(1);
-  }
+  client ??= new MongoClient(config.url.database);
+
+  logger.info(colors.green('🚀 Database connecting...'));
+  await client.connect();
+  logger.info(colors.green('🚀 Database connected successfully'));
+
+  bucket ??= new GridFSBucket(client.db(), { bucketName: 'images' });
 }
+
+export const getBucket = () => bucket;

@@ -1,7 +1,25 @@
 import { z } from 'zod';
-import { EUserGender } from './User.enum';
-import { date } from '../../../util/transform/date';
-import { lower } from '../../../util/transform/lower';
+import { EUserRole } from '../../../../prisma';
+import { enum_encode } from '../../../util/transform/enum';
+
+const socialSchema = z.object({
+  platform: z
+    .string({
+      required_error: 'Platform is missing',
+    })
+    .trim()
+    .min(1, "Platform can't be empty"),
+  link: z
+    .string({
+      required_error: 'Link is missing',
+    })
+    .url({
+      message: 'Give a valid link',
+    }),
+  followers: z.coerce.number({
+    required_error: 'Followers is missing',
+  }),
+});
 
 export const UserValidations = {
   create: z.object({
@@ -10,6 +28,7 @@ export const UserValidations = {
         .string({
           required_error: 'Email is missing',
         })
+        .toLowerCase()
         .email('Give a valid email'),
       password: z
         .string({
@@ -24,12 +43,9 @@ export const UserValidations = {
       name: z.string().optional(),
       avatar: z.string().optional(),
       phone: z.string().optional(),
-      gender: z
-        .string()
-        .transform(lower)
-        .pipe(z.nativeEnum(EUserGender))
-        .optional(),
-      birthDate: z.string().transform(date).optional(),
+      fcmToken: z.string().optional(),
+      address: z.string().optional(),
+      socials: z.array(socialSchema).optional(),
     }),
   }),
 
@@ -50,9 +66,27 @@ export const UserValidations = {
     }),
   }),
 
-  list: z.object({
+  getAllUser: z.object({
     query: z.object({
       search: z.string().trim().optional(),
+      role: z
+        .string()
+        .optional()
+        .transform(enum_encode)
+        .pipe(z.nativeEnum(EUserRole).optional()),
+    }),
+  }),
+
+  requestForInfluencer: z.object({
+    body: z.object({
+      avatar: z.string().optional(),
+      address: z
+        .string({
+          required_error: 'Address is missing',
+        })
+        .trim()
+        .min(1, "Address can't be empty"),
+      ...socialSchema.shape,
     }),
   }),
 };

@@ -1,20 +1,20 @@
 /* eslint-disable no-unused-vars */
-import User from '../user/User.model';
-import { createToken, verifyPassword } from './Auth.utils';
+import { encodeToken, TToken, verifyPassword } from './Auth.utils';
 import { StatusCodes } from 'http-status-codes';
 import ServerError from '../../../errors/ServerError';
-import { Types } from 'mongoose';
 import config from '../../../config';
 import { Response } from 'express';
-import Auth from './Auth.model';
 import ms from 'ms';
-import { TToken } from './Auth.interface';
+import prisma from '../../../util/prisma';
+import { Prisma } from '../../../../prisma';
 
 export const AuthServices = {
-  async getAuth(userId: Types.ObjectId, password: string) {
-    const auth = (await Auth.findOne({ user: userId }))!;
+  async getAuth(userId: string, password: string) {
+    const auth = await prisma.auth.findFirst({
+      where: { user: { id: userId } },
+    });
 
-    if (!(await verifyPassword(password, auth.password)))
+    if (!auth || !(await verifyPassword(password, auth.password)))
       throw new ServerError(
         StatusCodes.UNAUTHORIZED,
         'Your credentials are incorrect.',
@@ -33,24 +33,32 @@ export const AuthServices = {
     );
   },
 
-  destroyTokens(res: Response, cookies: TToken[]) {
+  destroyTokens<T extends readonly TToken[]>(res: Response, ...cookies: T) {
     for (const cookie of cookies)
-      res.clearCookie(cookie as TToken, {
+      res.clearCookie(cookie, {
         httpOnly: true,
         secure: !config.server.isDevelopment,
         maxAge: 0, // expire immediately
       });
   },
 
-  async resetPassword(userId: Types.ObjectId, password: string) {
-    return Auth.updateOne({ user: userId }, { password });
+  /** this function returns an object of tokens
+   * e.g. retrieveToken(userId, 'access_token', 'refresh_token');
+   * returns { access_token, refresh_token }
+   */
+  retrieveToken<T extends readonly TToken[]>(uid: string, ...token_types: T) {
+    return Object.fromEntries(
+      token_types.map(token_type => [
+        token_type,
+        encodeToken({ uid }, token_type),
+      ]),
+    ) as Record<T[number], string>;
   },
 
-  async retrieveToken(userId: Types.ObjectId) {
-    return {
-      access_token: createToken({ userId }, 'access_token'),
-      refresh_token: createToken({ userId }, 'refresh_token'),
-      user: await User.findById(userId).lean(),
-    };
+  async modifyPassword(where: Prisma.AuthWhereUniqueInput, password: string) {
+    return prisma.auth.update({
+      where,
+      data: { password: await password?.hash() },
+    });
   },
 };

@@ -1,52 +1,86 @@
-# 🚀 **Express-It: Zero-Config Express Boilerplate (TypeScript Edition)**  
+# Uber
 
-**Production-ready Express starter with TypeScript out of the box**  
-✅ **Full TypeScript support** (typed routes, models, middleware)  
-**Skip the setup, start coding!** A modern Express.js starter with:  
-✅ **Auto-generated `.env`** (no manual config needed)  
-✅ **Pre-built auth** (JWT)  
-✅ **Plug-and-play middleware** (uploads, logging, sockets)  
-✅ **Modular MVC structure**  
+A driver management platform for Uber-like services. This platform includes features like user management, chat functionality, OTP service, Stripe integration, and request validation.
 
----
+## Template
 
-## ⚡ **5-Second Setup**  
+This project is based on the [express-it](https://github.com/shaishab316/express-it) template.
+
+## Features
+
+- User Management:
+  - Sign up
+  - Sign in
+  - Reset Password
+  - Profile Management
+- Chat Functionality:
+  - Real-time chat
+  - File sharing
+  - Message deletion
+- OTP Service:
+  - Generate OTP
+  - Verify OTP
+- Stripe Integration:
+  - Payment processing
+  - Payment refund
+- Request Validation:
+  - Input validation
+  - Authentication and Authorization
+
+## Installation
+
+To get started with the application, clone the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/shaishabcoding/express-it.git
-cd express-it
+git clone https://github.com/shaishab316/uber.git
+cd uber
 npm install
-npm run dev  # .env auto-generates on first run!
 ```
 
----
+## Usage
 
-## ✨ **What's Inside**  
+### Development
 
-### 🔌 **Pre-Installed**  
-- **Auth**: `passport-jwt`, `bcrypt`  
-- **Files**: `multer` (upload middleware)  
-- **Real-time**: `socket.io`  
-- **Logs**: `winston` + `morgan`  
-- **Dev Tools**: `nodemon`, `eslint`  
+To start the development server, run:
 
-### 📂 **Auto-Generated Files**  
-- `.env` (created with defaults on first run)
-
----
-
-## 🛠 **Usage**  
-
-### **1. Start Developing**  
 ```bash
-npm run dev  # Auto-creates .env, starts server
+npm run dev
 ```
 
----
+This will start the server with auto-reloading enabled for development purposes.
 
-## 📜 **License**  
-MIT © `Shaishab Chandra Shil` – Free to use, modify, and ship!  
+### Production
 
----
+To build and start the application in production mode, use:
 
-**💡 Pro Tip:** Want to customize defaults? Edit `/config/index.ts` before first run!
+```bash
+npm run build
+npm start
+```
+
+## Scripts
+
+- `new-module`: Generate a new module using the builder script.
+- `build`: Transpile TypeScript to JavaScript.
+- `start`: Start the server.
+- `dev`: Start the server in development mode with TypeScript support.
+- `stripe`: Listen for Stripe webhook events and forward them to the application.
+- `lint`: Run ESLint to check for code quality.
+- `prettier`: Format code using Prettier.
+- `test`: Run tests (currently not specified).
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+## Author
+
+- **Shaishab Chandra Shil** - [GitHub](https://github.com/shaishab316)
+
+## Repository
+
+Find the repository on GitHub: [uber](https://github.com/shaishab316/uber.git)

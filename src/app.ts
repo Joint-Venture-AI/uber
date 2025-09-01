@@ -1,13 +1,12 @@
 import cors from 'cors';
 import express from 'express';
-import { StatusCodes } from 'http-status-codes';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import RoutesV1 from './routes/v1';
 import { Morgan } from './util/logger/morgen';
 import cookieParser from 'cookie-parser';
-import ServerError from './errors/ServerError';
 import config from './config';
 import { imageRetriever } from './app/middlewares/capture';
+import { notFoundError } from './errors';
 
 /**
  * The main application instance
@@ -54,9 +53,7 @@ app.use('/api/v1', RoutesV1);
 
 // 404 handler
 app.use(({ originalUrl }, _, next) => {
-  next(
-    new ServerError(StatusCodes.NOT_FOUND, `Route not found. ${originalUrl}`),
-  );
+  next(notFoundError(originalUrl));
 });
 
 // Error handler

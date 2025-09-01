@@ -1,68 +1,64 @@
-/* eslint-disable no-unused-vars */
-import { TUser } from './User.interface';
-import User from './User.model';
-import { StatusCodes } from 'http-status-codes';
-import ServerError from '../../../errors/ServerError';
-import { RootFilterQuery, Types } from 'mongoose';
 import { TList } from '../query/Query.interface';
-import Auth from '../auth/Auth.model';
-import { TAuth } from '../auth/Auth.interface';
-import { useSession } from '../../../util/db/session';
-import { Request } from 'express';
 import { userSearchableFields as searchFields } from './User.constant';
 import { deleteImage } from '../../middlewares/capture';
+import prisma from '../../../util/prisma';
+import { Prisma, Auth as TAuth, User as TUser } from '../../../../prisma';
+import { TPagination } from '../../../util/server/serveResponse';
 
 export const UserServices = {
-  async create(userData: Partial<TUser & TAuth>) {
-    return useSession(async session => {
-      let user = await User.findOne({ email: userData.email }).session(session);
-
-      if (user)
-        throw new ServerError(
-          StatusCodes.CONFLICT,
-          `${user.role.toCapitalize()} already exists!`,
-        );
-
-      [user] = await User.create([userData], { session });
-
-      await Auth.create(
-        [
-          {
-            user: user._id,
-            password: userData.password,
+  async create({ password, ...userData }: TUser & TAuth) {
+    return prisma.user.create({
+      data: {
+        ...userData,
+        Auth: {
+          create: {
+            password: await password?.hash(),
           },
-        ],
-        { session },
-      );
-
-      return user;
+        },
+      },
     });
   },
 
-  async edit({ user, body }: Request) {
-    if (body.avatar && user.avatar) await deleteImage(user.avatar);
+  async updateUser({
+    user,
+    body,
+  }: {
+    user: Partial<TUser>;
+    body: Partial<TUser>;
+  }) {
+    if (body.avatar) user?.avatar?.__pipes(deleteImage);
 
-    Object.assign(user, body);
-
-    return user.save();
+    return prisma.user.update({
+      where: { id: user.id },
+      data: body,
+    });
   },
 
-  async list({ page, limit, search }: TList) {
-    const filter: RootFilterQuery<TUser> = {};
+  async getAllUser({
+    page,
+    limit,
+    search,
+    omit,
+    ...where
+  }: Prisma.UserWhereInput & TList & { omit: Prisma.UserOmit }) {
+    where ??= {} as any;
 
     if (search)
-      filter.$or = searchFields.map(field => ({
+      where.OR = searchFields.map(field => ({
         [field]: {
-          $regex: search,
-          $options: 'i',
+          contains: search,
+          mode: 'insensitive',
         },
       }));
 
-    const users = await User.find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const users = await prisma.user.findMany({
+      where,
+      omit,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
-    const total = await User.countDocuments(filter);
+    const total = await prisma.user.count({ where });
 
     return {
       meta: {
@@ -71,20 +67,95 @@ export const UserServices = {
           limit,
           total,
           totalPages: Math.ceil(total / limit),
-        },
+        } as TPagination,
       },
       users,
     };
   },
 
-  async delete(userId: Types.ObjectId) {
-    return useSession(async session => {
-      const user = await User.findByIdAndDelete(userId).session(session);
-      await Auth.findOneAndDelete({ user: userId }).session(session);
-
-      if (user?.avatar) await deleteImage(user.avatar);
-
-      return user;
+  async getUserById({
+    userId,
+    omit = undefined,
+  }: {
+    userId: string;
+    omit?: Prisma.UserOmit;
+  }) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      omit,
     });
   },
+
+  async getUsersCount() {
+    const counts = await prisma.user.groupBy({
+      by: ['role'],
+      _count: {
+        _all: true,
+      },
+    });
+
+    return Object.fromEntries(
+      counts.map(({ role, _count }) => [role, _count._all]),
+    );
+  },
+
+  async delete(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    user?.avatar?.__pipes(deleteImage); // delete avatar
+
+    return prisma.user.delete({ where: { id: userId } });
+  },
+
+  async updateRating(influencerId: string) {
+    const {
+      _avg: { rating },
+      _count,
+    } = await prisma.review.aggregate({
+      where: { influencerId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    const influencer = await prisma.user.update({
+      where: { id: influencerId },
+      data: { rating: rating ?? 0 },
+    });
+
+    return {
+      rating: influencer.rating,
+      review_count: _count.rating ?? 0,
+    };
+  },
+
+  // async getPendingInfluencers({ page, limit }: TList) {
+  //   const where = {
+  //     role: EUserRole.USER,
+  //     socials: {
+  //       some: {},
+  //     },
+  //   };
+
+  //   const influencers = await prisma.user.findMany({
+  //     where,
+  //     skip: (page - 1) * limit,
+  //     take: limit,
+  //   });
+
+  //   const total = await prisma.user.count({
+  //     where,
+  //   });
+
+  //   return {
+  //     meta: {
+  //       pagination: {
+  //         page,
+  //         limit,
+  //         total,
+  //         totalPages: Math.ceil(total / limit),
+  //       } as TPagination,
+  //     },
+  //     influencers,
+  //   };
+  // },
 };

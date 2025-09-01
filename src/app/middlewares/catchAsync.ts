@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-expressions */
 import { ErrorRequestHandler, RequestHandler } from 'express';
 
 /**
@@ -14,7 +13,7 @@ const catchAsync =
   ): RequestHandler =>
   async (req, res, next) => {
     try {
-      await fn(req as any, res, next);
+      await fn(req, res, next);
     } catch (error) {
       if (errFn) await errFn(error, req, res, next);
       else next(error);

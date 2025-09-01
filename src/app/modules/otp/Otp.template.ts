@@ -2,7 +2,13 @@ import ms from 'ms';
 import config from '../../../config';
 
 export const OtpTemplates = {
-  reset: ({ userName, otp }: { userName: string; otp: string }) => /*html*/ `
+  'reset password': ({
+    userName,
+    otp,
+  }: {
+    userName: string;
+    otp: string;
+  }) => /*html*/ `
   	<!DOCTYPE html>
 		<html lang="en">
   		<head>
@@ -286,7 +292,13 @@ export const OtpTemplates = {
   	</html>
 	`,
 
-  welcome: ({ userName, otp }: { userName: string; otp: string }) => /*html*/ `
+  'account verify': ({
+    userName,
+    otp,
+  }: {
+    userName: string;
+    otp: string;
+  }) => /*html*/ `
   	<!DOCTYPE html>
 		<html lang="en">
   		<head>

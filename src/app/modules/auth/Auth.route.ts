@@ -17,7 +17,7 @@ router.post(
   '/register',
   capture({ avatar: { maxCount: 1, size: 5 * 1024 * 1024 } }),
   purifyRequest(UserValidations.create, UserValidations.edit),
-  UserControllers.create,
+  UserControllers.createUser,
 );
 
 router.post(
@@ -29,40 +29,51 @@ router.post(
 
 router.post('/logout', AuthControllers.logout);
 
-router.post(
-  '/reset-password',
-  auth.reset(),
-  purifyRequest(AuthValidations.resetPassword),
-  AuthControllers.resetPassword,
-);
-
 /**
  * generate new access token
  */
 router.get('/refresh-token', auth.refresh(), AuthControllers.refreshToken);
 
 /* Otps */
-router.post(
-  '/reset-password-otp-send',
-  otpLimiter,
-  purifyRequest(OtpValidations.send),
-  UserMiddlewares.useUser(),
-  OtpControllers.resetPasswordOtpSend,
-);
 
-router.post(
-  '/reset-password-otp-verify',
+/**
+ * Forget password
+ */
+{
+  router.post(
+    '/reset-password-otp-send',
+    otpLimiter,
+    purifyRequest(OtpValidations.email),
+    UserMiddlewares.useUser(),
+    OtpControllers.resetPasswordOtpSend,
+  );
+  router.post(
+    '/reset-password-otp-verify',
+    otpLimiter,
+    purifyRequest(OtpValidations.email, OtpValidations.otp),
+    UserMiddlewares.useUser(),
+    OtpControllers.resetPasswordOtpVerify,
+  );
+  router.post(
+    '/reset-password',
+    auth.reset(),
+    purifyRequest(AuthValidations.resetPassword),
+    AuthControllers.resetPassword,
+  );
+}
+
+router.get(
+  '/account-verify-otp-send',
   otpLimiter,
-  purifyRequest(OtpValidations.verify),
-  UserMiddlewares.useUser(),
-  OtpControllers.resetPasswordOtpVerify,
+  auth.guest(),
+  OtpControllers.accountVerifyOtpSend,
 );
 
 router.post(
   '/account-verify',
   otpLimiter,
-  purifyRequest(OtpValidations.verify),
-  UserMiddlewares.useUser(),
+  auth.guest(),
+  purifyRequest(OtpValidations.otp),
   AuthControllers.verifyAccount,
 );
 

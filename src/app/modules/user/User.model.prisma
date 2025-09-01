@@ -1,0 +1,32 @@
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  fcmToken  String?
+  role      EUserRole @default(GUEST)
+  name      String?
+  email     String    @unique
+  phone     String?
+  avatar    String?
+  address   String?
+  rating    Float     @default(0)
+  socials   TSocial[]
+  Auth      Auth?
+  Otp       Otp?
+
+  @@map("users")
+}
+
+type TSocial {
+  platform  String
+  link      String
+  followers Int    @default(0)
+}
+
+enum EUserRole {
+  GUEST
+  USER
+  INFLUENCER
+  ADMIN
+  SUB_ADMIN
+}
