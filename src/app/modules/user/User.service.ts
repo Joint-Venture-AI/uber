@@ -54,9 +54,7 @@ export const UserServices = {
         role: EUserRole.USER,
       },
       omit: {
-        driver_info: true,
         password: true,
-        is_admin: true,
         otp: true,
         otp_expires_at: true,
       },

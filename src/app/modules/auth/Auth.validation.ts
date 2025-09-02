@@ -3,15 +3,10 @@ import { z } from 'zod';
 export const AuthValidations = {
   login: z.object({
     body: z.object({
-      email: z
-        .email({
-          error: 'Email is missing',
-        })
-        .optional(),
+      email: z.email({ error: 'Email is invalid' }).optional(),
+      phone: z.string().optional(),
       password: z
-        .string({
-          error: 'Password is missing',
-        })
+        .string({ error: 'Password is missing' })
         .min(6, 'Password must be at least 6 characters long'),
     }),
   }),

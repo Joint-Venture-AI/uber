@@ -5,7 +5,6 @@ import auth from '../../middlewares/auth';
 import { UserControllers } from '../user/User.controller';
 import { UserValidations } from '../user/User.validation';
 import purifyRequest from '../../middlewares/purifyRequest';
-import { UserMiddlewares } from '../user/User.middleware';
 
 const router = Router();
 
@@ -18,11 +17,8 @@ router.post(
 router.post(
   '/login',
   purifyRequest(AuthValidations.login),
-  UserMiddlewares.useUser(),
   AuthControllers.login,
 );
-
-router.post('/logout', AuthControllers.logout);
 
 /**
  * generate new access token

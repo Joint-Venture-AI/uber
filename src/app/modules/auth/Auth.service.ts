@@ -1,45 +1,54 @@
 /* eslint-disable no-unused-vars */
+import { $ZodIssue } from 'zod/v4/core/errors.cjs';
+import { User as TUser } from '../../../../prisma';
+import { TUserLogin } from './Auth.interface';
 import { encodeToken, TToken, verifyPassword } from './Auth.utils';
-import { StatusCodes } from 'http-status-codes';
-import ServerError from '../../../errors/ServerError';
-import config from '../../../config';
-import { Response } from 'express';
-import ms from 'ms';
+import { ZodError } from 'zod';
 import prisma from '../../../util/prisma';
-import { Prisma } from '../../../../prisma';
+import ServerError from '../../../errors/ServerError';
+import { StatusCodes } from 'http-status-codes';
 
 export const AuthServices = {
-  async getAuth(userId: string, password: string) {
-    const auth = await prisma.auth.findFirst({
-      where: { user: { id: userId } },
+  async login({ password, email, phone }: TUserLogin): Promise<Partial<TUser>> {
+    //! if email or phone is missing then throw error
+    if (!email || !phone) {
+      const issues: $ZodIssue[] = [];
+
+      if (!email && !phone)
+        issues.push({
+          code: 'custom',
+          path: ['email'],
+          message: 'Email or phone is missing',
+        });
+
+      if (!phone && !email)
+        issues.push({
+          code: 'custom',
+          path: ['phone'],
+          message: 'Email or phone is missing',
+        });
+
+      if (issues.length) throw new ZodError(issues);
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email }, { phone }] },
+      omit: {
+        otp: true,
+        otp_expires_at: true,
+      },
     });
 
-    if (!auth || !(await verifyPassword(password, auth.password)))
-      throw new ServerError(
-        StatusCodes.UNAUTHORIZED,
-        'Your credentials are incorrect.',
-      );
+    if (!user)
+      throw new ServerError(StatusCodes.NOT_FOUND, "User doesn't exist");
 
-    return auth;
-  },
+    if (!(await verifyPassword(password, user.password))) {
+      throw new ServerError(StatusCodes.UNAUTHORIZED, 'Incorrect password');
+    }
 
-  setTokens(res: Response, tokens: { [key in TToken]?: string }) {
-    Object.entries(tokens).forEach(([key, value]) =>
-      res.cookie(key, value, {
-        httpOnly: true,
-        secure: !config.server.isDevelopment,
-        maxAge: ms(config.jwt[key as TToken].expire_in),
-      }),
-    );
-  },
+    Object.assign(user, { password: undefined });
 
-  destroyTokens<T extends readonly TToken[]>(res: Response, ...cookies: T) {
-    for (const cookie of cookies)
-      res.clearCookie(cookie, {
-        httpOnly: true,
-        secure: !config.server.isDevelopment,
-        maxAge: 0, // expire immediately
-      });
+    return user;
   },
 
   /** this function returns an object of tokens
@@ -53,12 +62,5 @@ export const AuthServices = {
         encodeToken({ uid }, token_type),
       ]),
     ) as Record<T[number], string>;
-  },
-
-  async modifyPassword(where: Prisma.AuthWhereUniqueInput, password: string) {
-    return prisma.auth.update({
-      where,
-      data: { password: await password?.hash() },
-    });
   },
 };
