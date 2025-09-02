@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{SERVER_NAME}} - Password Reset Verification</title>
+    <title>{{SERVER_NAME}} - Account Verification</title>
     <link rel="stylesheet" href="otp_verification_send.css" />
     <style>
       /* {{CSS}} */
@@ -12,8 +12,11 @@
   <body>
     <div class="container">
       <div class="card">
-        <div class="header">
-          <h1>Password Reset</h1>
+        <div
+          class="header"
+          style="background: linear-gradient(135deg, #78e546, #218004)"
+        >
+          <h1>Account Verification</h1>
           <p>Verification Required</p>
         </div>
 
@@ -21,8 +24,8 @@
           <div class="greeting">
             <h2>Hi, {{USER_NAME}}</h2>
             <p>
-              We received a request to reset your password. Enter this
-              verification code to continue:
+              Welcome to {{SERVER_NAME}}! We received a request to verify your
+              account. Enter this verification code to continue:
             </p>
           </div>
 

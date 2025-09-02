@@ -3,21 +3,20 @@ import path from 'path';
 import config from '../config';
 import ms from 'ms';
 
-export const reset_password_otp_send = ({
+export const otp_send_template = ({
   userName,
   otp,
+  template,
 }: {
   userName: string;
   otp: string;
+  template: 'account_verify' | 'reset_password';
 }) =>
   fs
-    .readFileSync(
-      path.resolve(__dirname, 'reset_password_otp_send.html'),
-      'utf-8',
-    )
+    .readFileSync(path.resolve(__dirname, `${template}_otp_send.html`), 'utf-8')
     .replace(
       /\/\* {{CSS}} \*\//g,
-      `${fs.readFileSync(path.resolve(__dirname, 'reset_password_otp_send.css'), 'utf-8')}`,
+      `${fs.readFileSync(path.resolve(__dirname, 'otp_verification_send.css'), 'utf-8')}`,
     )
     .replace(/{{SERVER_NAME}}/g, config.server.name)
     .replace(/{{USER_NAME}}/g, userName)
