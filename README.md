@@ -32,7 +32,7 @@ This project is based on the [express-it](https://github.com/shaishab316/express
 To get started with the application, clone the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/shaishab316/uber.git
+git clone https://github.com/Joint-Venture-AI/uber.git
 cd uber
 npm install
 ```
@@ -83,4 +83,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Repository
 
-Find the repository on GitHub: [uber](https://github.com/shaishab316/uber.git)
+Find the repository on GitHub: [uber](https://github.com/Joint-Venture-AI/uber.git)
