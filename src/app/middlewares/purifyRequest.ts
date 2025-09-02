@@ -1,14 +1,14 @@
 /* eslint-disable no-unused-vars */
 import type { Request } from 'express';
-import { AnyZodObject } from 'zod';
+import { ZodObject } from 'zod';
 import catchAsync from './catchAsync';
 import config from '../../config';
 
 const keys = ['body', 'query', 'params', 'cookies'] as const;
 
 type SchemaOrFn =
-  | AnyZodObject
-  | ((req: Request) => AnyZodObject | Promise<AnyZodObject>);
+  | ZodObject
+  | ((req: Request) => ZodObject | Promise<ZodObject>);
 
 /**
  * Middleware to validate and sanitize incoming Express requests using Zod schemas.
@@ -31,7 +31,7 @@ const purifyRequest = (...schemas: SchemaOrFn[]) =>
         req[key] = Object.assign(
           {},
           key === 'params' && req.params,
-          ...results.map(result => result?.[key] ?? {}),
+          ...results.map((result: any) => result?.[key] ?? {}),
         );
       });
 

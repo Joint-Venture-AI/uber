@@ -3,12 +3,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  role     EUserRole?
+  role     EUserRole @default(USER)
   email    String?
   phone    String?
   password String
 
-  avatar String @default("/images/default-avatar.png")
+  avatar String @default("/images/placeholder.png")
   name   String @default("Unknown")
 
   nid_number     String?

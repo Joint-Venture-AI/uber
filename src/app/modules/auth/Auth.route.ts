@@ -5,18 +5,14 @@ import auth from '../../middlewares/auth';
 import { UserControllers } from '../user/User.controller';
 import { UserValidations } from '../user/User.validation';
 import purifyRequest from '../../middlewares/purifyRequest';
-import capture from '../../middlewares/capture';
 import { UserMiddlewares } from '../user/User.middleware';
 
 const router = Router();
 
 router.post(
   '/register',
-  capture({
-    avatar: { maxCount: 1, size: 5 * 1024 * 1024, fileType: 'images' },
-  }),
   purifyRequest(UserValidations.register),
-  UserControllers.createUser,
+  UserControllers.register,
 );
 
 router.post(

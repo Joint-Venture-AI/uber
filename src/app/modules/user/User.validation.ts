@@ -6,16 +6,13 @@ export const UserValidations = {
   register: z.object({
     body: z.object({
       name: z
-        .string({
-          error: 'Name is missing',
-        })
+        .string({ error: 'Name is missing' })
         .trim()
         .min(1, "Name can't be empty"),
-
+      email: z.email({ error: 'Email is invalid' }).optional(),
+      phone: z.string().optional(),
       password: z
-        .string({
-          error: 'Password is missing',
-        })
+        .string({ error: 'Password is missing' })
         .min(6, 'Password must be at least 6 characters long'),
     }),
   }),

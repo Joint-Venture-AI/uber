@@ -1,20 +1,64 @@
 import { TList } from '../query/Query.interface';
 import { userSearchableFields as searchFields } from './User.constant';
-import { deleteImage } from '../../middlewares/capture';
 import prisma from '../../../util/prisma';
-import { Prisma, Auth as TAuth, User as TUser } from '../../../../prisma';
+import { EUserRole, Prisma, User as TUser } from '../../../../prisma';
 import { TPagination } from '../../../util/server/serveResponse';
+import { deleteFile } from '../../middlewares/capture';
+import { TUserRegister } from './User.interface';
+import ServerError from '../../../errors/ServerError';
+import { StatusCodes } from 'http-status-codes';
+import { ZodError } from 'zod';
+import { $ZodIssue } from 'zod/v4/core/errors.cjs';
 
 export const UserServices = {
-  async create({ password, ...userData }: TUser & TAuth) {
+  async create({ password, name, email, phone }: TUserRegister) {
+    //! if email or phone is missing then throw error
+    if (!email || !phone) {
+      const issues: $ZodIssue[] = [];
+
+      if (!email && !phone)
+        issues.push({
+          code: 'custom',
+          path: ['email'],
+          message: 'Email or phone is missing',
+        });
+
+      if (!phone && !email)
+        issues.push({
+          code: 'custom',
+          path: ['phone'],
+          message: 'Email or phone is missing',
+        });
+
+      if (issues.length) throw new ZodError(issues);
+    }
+
+    //! check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { phone }] },
+    });
+
+    if (existingUser)
+      throw new ServerError(
+        StatusCodes.CONFLICT,
+        `User already exists with this ${email ? 'email' : ''} ${phone ? 'phone' : ''}`.trim(),
+      );
+
+    //! finally create user and in return omit auth fields
     return prisma.user.create({
       data: {
-        ...userData,
-        Auth: {
-          create: {
-            password: await password?.hash(),
-          },
-        },
+        name,
+        email,
+        phone,
+        password: await password.hash(),
+        role: EUserRole.USER,
+      },
+      omit: {
+        driver_info: true,
+        password: true,
+        is_admin: true,
+        otp: true,
+        otp_expires_at: true,
       },
     });
   },
@@ -26,7 +70,7 @@ export const UserServices = {
     user: Partial<TUser>;
     body: Partial<TUser>;
   }) {
-    if (body.avatar) user?.avatar?.__pipes(deleteImage);
+    if (body.avatar) user?.avatar?.__pipes(deleteFile);
 
     return prisma.user.update({
       where: { id: user.id },
@@ -102,30 +146,9 @@ export const UserServices = {
   async delete(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
-    user?.avatar?.__pipes(deleteImage); // delete avatar
+    user?.avatar?.__pipes(deleteFile); // delete avatar
 
     return prisma.user.delete({ where: { id: userId } });
-  },
-
-  async updateRating(influencerId: string) {
-    const {
-      _avg: { rating },
-      _count,
-    } = await prisma.review.aggregate({
-      where: { influencerId },
-      _avg: { rating: true },
-      _count: { rating: true },
-    });
-
-    const influencer = await prisma.user.update({
-      where: { id: influencerId },
-      data: { rating: rating ?? 0 },
-    });
-
-    return {
-      rating: influencer.rating,
-      review_count: _count.rating ?? 0,
-    };
   },
 
   // async getPendingInfluencers({ page, limit }: TList) {

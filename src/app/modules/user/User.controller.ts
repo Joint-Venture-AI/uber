@@ -7,8 +7,8 @@ import { User as TUser } from '../../../../prisma';
 import prisma from '../../../util/prisma';
 
 export const UserControllers = {
-  createUser: catchAsync(async ({ body }, res) => {
-    const user = (await UserServices.create(body)) as TUser;
+  register: catchAsync(async ({ body }, res) => {
+    const user = await UserServices.create(body);
 
     const { access_token, refresh_token } = AuthServices.retrieveToken(
       user.id,
@@ -16,13 +16,12 @@ export const UserControllers = {
       'refresh_token',
     );
 
-    AuthServices.setTokens(res, { access_token, refresh_token });
-
     serveResponse(res, {
       statusCode: StatusCodes.CREATED,
       message: `${user.role?.toCapitalize() ?? 'Unknown'} registered successfully!`,
       data: {
         access_token,
+        refresh_token,
         user,
       },
     });
