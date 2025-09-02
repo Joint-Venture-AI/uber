@@ -1,8 +1,6 @@
 import { AuthServices } from './Auth.service';
 import catchAsync from '../../middlewares/catchAsync';
 import serveResponse from '../../../util/server/serveResponse';
-import prisma from '../../../util/prisma';
-import { EUserRole } from '../../../../prisma';
 
 export const AuthControllers = {
   login: catchAsync(async ({ body }, res) => {
@@ -20,6 +18,24 @@ export const AuthControllers = {
     });
   }),
 
+  accountVerify: catchAsync(async ({ body }, res) => {
+    const user = await AuthServices.accountVerify(body);
+
+    const { access_token, refresh_token } = AuthServices.retrieveToken(
+      user.id!,
+      'access_token',
+      'refresh_token',
+    );
+
+    serveResponse(res, {
+      message: 'Account verified successfully!',
+      data: { user, access_token, refresh_token },
+    });
+  }),
+
+  /*
+
+  
   resetPassword: catchAsync(async ({ user }, res) => {
     const { access_token, refresh_token } = AuthServices.retrieveToken(
       user.id,
@@ -51,17 +67,5 @@ export const AuthControllers = {
     });
   }),
 
-  verifyAccount: catchAsync(async ({ user }, res) => {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        role: EUserRole.USER,
-      },
-    });
-
-    serveResponse(res, {
-      message: 'Account verified successfully!',
-      data: { user },
-    });
-  }),
+  */
 };

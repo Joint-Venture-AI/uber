@@ -4,7 +4,6 @@ import purifyRequest from '../../middlewares/purifyRequest';
 import { QueryValidations } from '../query/Query.validation';
 import { UserValidations } from './User.validation';
 import capture from '../../middlewares/capture';
-import { AuthControllers } from '../auth/Auth.controller';
 import auth from '../../middlewares/auth';
 
 const avatarCapture = capture({
@@ -49,12 +48,12 @@ const user = Router();
     UserControllers.edit,
   );
 
-  user.post(
-    '/change-password',
-    auth(),
-    purifyRequest(UserValidations.changePassword),
-    AuthControllers.changePassword,
-  );
+  // user.post(
+  //   '/change-password',
+  //   auth(),
+  //   purifyRequest(UserValidations.changePassword),
+  //   AuthControllers.changePassword,
+  // );
 }
 
 export const UserRoutes = {

@@ -7,31 +7,17 @@ import { deleteFile } from '../../middlewares/capture';
 import { TUserRegister } from './User.interface';
 import ServerError from '../../../errors/ServerError';
 import { StatusCodes } from 'http-status-codes';
-import { ZodError } from 'zod';
-import { $ZodIssue } from 'zod/v4/core/errors.cjs';
+import { AuthServices } from '../auth/Auth.service';
+import { errorLogger } from '../../../util/logger/logger';
+import { otpGenerator } from '../../../util/crypto/otpGenerator';
+import config from '../../../config';
+import { otp_send_template } from '../../../templates';
+import ms from 'ms';
+import { sendEmail } from '../../../util/sendMail';
 
 export const UserServices = {
   async create({ password, name, email, phone }: TUserRegister) {
-    //! if email or phone is missing then throw error
-    if (!email || !phone) {
-      const issues: $ZodIssue[] = [];
-
-      if (!email && !phone)
-        issues.push({
-          code: 'custom',
-          path: ['email'],
-          message: 'Email or phone is missing',
-        });
-
-      if (!phone && !email)
-        issues.push({
-          code: 'custom',
-          path: ['phone'],
-          message: 'Email or phone is missing',
-        });
-
-      if (issues.length) throw new ZodError(issues);
-    }
+    AuthServices.validEmailORPhone({ email, phone });
 
     //! check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -44,6 +30,23 @@ export const UserServices = {
         `User already exists with this ${email ? 'email' : ''} ${phone ? 'phone' : ''}`.trim(),
       );
 
+    const otp = otpGenerator(config.otp.length);
+
+    try {
+      if (email)
+        sendEmail({
+          to: email,
+          subject: `Your ${config.server.name} Account Verification OTP is ⚡ ${otp} ⚡.`,
+          html: otp_send_template({
+            userName: name,
+            otp,
+            template: 'account_verify',
+          }),
+        });
+    } catch (error: any) {
+      errorLogger.error(error.message);
+    }
+
     //! finally create user and in return omit auth fields
     return prisma.user.create({
       data: {
@@ -52,11 +55,13 @@ export const UserServices = {
         phone,
         password: await password.hash(),
         role: EUserRole.USER,
+        otp,
+        otp_expires_at: new Date(Date.now() + ms(config.otp.exp)),
       },
       omit: {
         password: true,
         otp: true,
-        otp_expires_at: true,
+        driver_info: true,
       },
     });
   },

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { AuthControllers } from './Auth.controller';
 import { AuthValidations } from './Auth.validation';
-import auth from '../../middlewares/auth';
 import { UserControllers } from '../user/User.controller';
 import { UserValidations } from '../user/User.validation';
 import purifyRequest from '../../middlewares/purifyRequest';
@@ -15,6 +14,12 @@ router.post(
 );
 
 router.post(
+  '/account-verify',
+  purifyRequest(AuthValidations.accountVerify),
+  AuthControllers.accountVerify,
+);
+
+router.post(
   '/login',
   purifyRequest(AuthValidations.login),
   AuthControllers.login,
@@ -23,7 +28,7 @@ router.post(
 /**
  * generate new access token
  */
-router.get('/refresh-token', auth.refresh_token, AuthControllers.refreshToken);
+// router.get('/refresh-token', auth.refresh_token, AuthControllers.refreshToken);
 
 /* Otps */
 
@@ -58,14 +63,6 @@ router.get('/refresh-token', auth.refresh_token, AuthControllers.refreshToken);
 //   otpLimiter,
 //   auth.guest(),
 //   OtpControllers.accountVerifyOtpSend,
-// );
-
-// router.post(
-//   '/account-verify',
-//   otpLimiter,
-//   auth.guest(),
-//   purifyRequest(OtpValidations.otp),
-//   AuthControllers.verifyAccount,
 // );
 
 export const AuthRoutes = router;
