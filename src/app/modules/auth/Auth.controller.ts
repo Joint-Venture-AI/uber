@@ -20,7 +20,7 @@ export const AuthControllers = {
     });
   }),
 
-  resetPassword: catchAsync(async ({ body, user }, res) => {
+  resetPassword: catchAsync(async ({ user }, res) => {
     const { access_token, refresh_token } = AuthServices.retrieveToken(
       user.id,
       'access_token',
@@ -45,7 +45,7 @@ export const AuthControllers = {
     });
   }),
 
-  changePassword: catchAsync(async ({ user, body }, res) => {
+  changePassword: catchAsync(async (_, res) => {
     serveResponse(res, {
       message: 'Password changed successfully!',
     });

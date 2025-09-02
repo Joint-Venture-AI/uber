@@ -39,6 +39,7 @@ const purifyRequest = (...schemas: SchemaOrFn[]) =>
     },
     (error, req, _, next) => {
       if (config.server.isDevelopment)
+        // eslint-disable-next-line no-console
         keys.forEach(key => console.log(`${key} :`, req[key]));
 
       next(error);
