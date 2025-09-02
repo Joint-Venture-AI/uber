@@ -1,22 +1,27 @@
+/* eslint-disable no-unused-vars */
 import { StatusCodes } from 'http-status-codes';
 import ServerError from '../../errors/ServerError';
-import { decodeToken, superRoles, TToken } from '../modules/auth/Auth.utils';
+import { decodeToken, TToken } from '../modules/auth/Auth.utils';
 import catchAsync from './catchAsync';
-import { EUserRole } from '../../../prisma';
 import prisma from '../../util/prisma';
-import { enum_decode } from '../../util/transform/enum';
+import { EUserRole, User as TUser } from '../../../prisma';
 
 /**
  * Middleware to authenticate and authorize requests based on user roles
  *
  * @param roles - The roles that are allowed to access the resource
  */
-const auth = (roles: EUserRole[] = [], token_type: TToken = 'access_token') =>
+const auth = ({
+  token_type = 'access_token',
+  validator = () => void 0,
+}: {
+  token_type?: TToken;
+  validator?: (user: TUser) => void;
+} = {}) =>
   catchAsync(async (req, _, next) => {
     const token =
-      req.cookies[token_type] ||
-      req.headers.authorization ||
-      req.query[token_type];
+      // req.cookies[token_type] ||
+      req.headers.authorization || req.query[token_type];
 
     const id = decodeToken(token, token_type)?.uid;
 
@@ -36,29 +41,62 @@ const auth = (roles: EUserRole[] = [], token_type: TToken = 'access_token') =>
         'Maybe your account has been deleted. Register again.',
       );
 
-    const requiredRoles = Array.from(new Set([...superRoles, ...roles]));
-
-    if (roles.length && !requiredRoles.includes(user.role))
-      throw new ServerError(
-        StatusCodes.FORBIDDEN,
-        user.role === EUserRole.GUEST
-          ? `Oh ${user.name}, you were not verified yet! Please verify your email.`
-          : `Oh ${user.name}, poor ${enum_decode(user?.role)}! Only the ${requiredRoles.map(enum_decode).join(' or ')} can access ${req.path} route!`,
-      );
+    validator(user);
 
     req.user = user;
 
     next();
   });
 
-auth.admin = () => auth([EUserRole.ADMIN]);
-auth.subAdmin = () => auth([EUserRole.SUB_ADMIN]);
-auth.influencer = () => auth([EUserRole.INFLUENCER]);
-auth.user = () => auth([EUserRole.USER]);
-auth.notGuest = () => auth(Object.values(EUserRole).excludes(EUserRole.GUEST));
-auth.guest = () => auth([EUserRole.GUEST]);
+auth.admin = auth({
+  validator(user) {
+    if (!user.is_admin) {
+      throw new ServerError(StatusCodes.UNAUTHORIZED, 'You are not an admin');
+    }
+  },
+});
 
-auth.reset = () => auth([], 'reset_token');
-auth.refresh = () => auth([], 'refresh_token');
+auth.user = auth({
+  validator({ is_verified, is_active, role, is_admin }) {
+    if (is_admin) return;
+
+    if (!is_verified) {
+      throw new ServerError(
+        StatusCodes.UNAUTHORIZED,
+        'You account are not verified',
+      );
+    } else if (!is_active) {
+      throw new ServerError(
+        StatusCodes.UNAUTHORIZED,
+        'You account are not active',
+      );
+    } else if (role !== EUserRole.USER) {
+      throw new ServerError(StatusCodes.UNAUTHORIZED, 'You are not a user');
+    }
+  },
+});
+
+auth.driver = auth({
+  validator({ is_verified, is_active, role, is_admin }) {
+    if (is_admin) return;
+
+    if (!is_verified) {
+      throw new ServerError(
+        StatusCodes.UNAUTHORIZED,
+        'You account are not verified',
+      );
+    } else if (!is_active) {
+      throw new ServerError(
+        StatusCodes.UNAUTHORIZED,
+        'You account are not active',
+      );
+    } else if (role !== EUserRole.DRIVER) {
+      throw new ServerError(StatusCodes.UNAUTHORIZED, 'You are not a driver');
+    }
+  },
+});
+
+//! Token Verification
+auth.refresh_token = auth({ token_type: 'refresh_token' });
 
 export default auth;

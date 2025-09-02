@@ -2,34 +2,16 @@ import { z } from 'zod';
 import { EUserRole } from '../../../../prisma';
 import { enum_encode } from '../../../util/transform/enum';
 
-const socialSchema = z.object({
-  platform: z
-    .string({
-      required_error: 'Platform is missing',
-    })
-    .trim()
-    .min(1, "Platform can't be empty"),
-  link: z
-    .string({
-      required_error: 'Link is missing',
-    })
-    .url({
-      message: 'Give a valid link',
-    }),
-  followers: z.coerce.number({
-    required_error: 'Followers is missing',
-  }),
-});
-
 export const UserValidations = {
-  create: z.object({
+  register: z.object({
     body: z.object({
-      email: z
+      name: z
         .string({
-          required_error: 'Email is missing',
+          required_error: 'Name is missing',
         })
-        .toLowerCase()
-        .email('Give a valid email'),
+        .trim()
+        .min(1, "Name can't be empty"),
+
       password: z
         .string({
           required_error: 'Password is missing',
@@ -45,7 +27,6 @@ export const UserValidations = {
       phone: z.string().optional(),
       fcmToken: z.string().optional(),
       address: z.string().optional(),
-      socials: z.array(socialSchema).optional(),
     }),
   }),
 
@@ -74,19 +55,6 @@ export const UserValidations = {
         .optional()
         .transform(enum_encode)
         .pipe(z.nativeEnum(EUserRole).optional()),
-    }),
-  }),
-
-  requestForInfluencer: z.object({
-    body: z.object({
-      avatar: z.string().optional(),
-      address: z
-        .string({
-          required_error: 'Address is missing',
-        })
-        .trim()
-        .min(1, "Address can't be empty"),
-      ...socialSchema.shape,
     }),
   }),
 };

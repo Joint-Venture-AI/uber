@@ -1,7 +1,6 @@
 import { AuthServices } from './Auth.service';
 import catchAsync from '../../middlewares/catchAsync';
 import serveResponse from '../../../util/server/serveResponse';
-import { OtpServices } from '../otp/Otp.service';
 import prisma from '../../../util/prisma';
 import { EUserRole } from '../../../../prisma';
 import { TToken } from './Auth.utils';
@@ -77,9 +76,7 @@ export const AuthControllers = {
     });
   }),
 
-  verifyAccount: catchAsync(async ({ user, body }, res) => {
-    await OtpServices.verify(user.id, body.otp);
-
+  verifyAccount: catchAsync(async ({ user }, res) => {
     user = await prisma.user.update({
       where: { id: user.id },
       data: {

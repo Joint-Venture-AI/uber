@@ -22,13 +22,6 @@ const admin = Router();
     UserControllers.superGetAllUser,
   );
 
-  admin.post(
-    '/create-sub-admin',
-    avatarCapture,
-    purifyRequest(UserValidations.create, UserValidations.edit),
-    UserControllers.createSubAdmin,
-  );
-
   admin.patch(
     ':userId/edit',
     avatarCapture,
@@ -61,51 +54,9 @@ const user = Router();
     purifyRequest(UserValidations.changePassword),
     AuthControllers.changePassword,
   );
-
-  user.post(
-    '/request-for-influencer',
-    auth.user(),
-    avatarCapture,
-    purifyRequest(UserValidations.requestForInfluencer),
-    UserControllers.requestForInfluencer,
-  );
-}
-
-const subAdmin = Router();
-{
-  subAdmin.get(
-    '/',
-    purifyRequest(QueryValidations.list),
-    UserControllers.getInfluencers,
-  );
-
-  subAdmin.get(
-    '/pending-influencers',
-    purifyRequest(QueryValidations.list),
-    UserControllers.getPendingInfluencers,
-  );
-
-  subAdmin.get(
-    '/:influencerId',
-    purifyRequest(QueryValidations.exists('influencerId', 'user')),
-    UserControllers.getInfluencerDetails,
-  );
-
-  subAdmin.post(
-    '/:influencerId/approve',
-    purifyRequest(QueryValidations.exists('influencerId', 'user')),
-    UserControllers.approveInfluencer,
-  );
-
-  subAdmin.post(
-    '/:influencerId/decline',
-    purifyRequest(QueryValidations.exists('influencerId', 'user')),
-    UserControllers.declineInfluencer,
-  );
 }
 
 export const UserRoutes = {
   admin,
   user,
-  subAdmin,
 };

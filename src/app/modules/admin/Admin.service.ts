@@ -3,7 +3,6 @@ import { errorLogger } from '../../../util/logger/logger';
 import { logger } from '../../../util/logger/logger';
 import config from '../../../config';
 import prisma from '../../../util/prisma';
-import { EUserRole } from '../../../../prisma';
 
 export const AdminServices = {
   /**
@@ -21,24 +20,35 @@ export const AdminServices = {
         where: { email },
       });
 
-      if (admin?.role === EUserRole.ADMIN) return;
+      if (admin?.is_admin && admin?.is_active && admin?.is_verified) return;
 
       logger.info(colors.green('🔑 admin creation started...'));
 
-      await prisma.user.upsert({
-        where: { email },
-        update: { role: EUserRole.ADMIN },
-        create: {
-          name,
-          email,
-          role: EUserRole.ADMIN,
-          Auth: {
-            create: {
-              password: await password?.hash(),
-            },
+      if (admin) {
+        await prisma.user.update({
+          where: {
+            id: admin.id,
           },
-        },
-      });
+          data: {
+            is_active: true,
+            is_verified: true,
+            is_admin: true,
+          },
+        });
+      } else {
+        await prisma.user.create({
+          data: {
+            name,
+            email,
+            password: await password?.hash(),
+            avatar: config.server.default_avatar,
+
+            is_active: true,
+            is_verified: true,
+            is_admin: true,
+          },
+        });
+      }
 
       logger.info(colors.green('✔ admin created successfully!'));
     } catch (error) {

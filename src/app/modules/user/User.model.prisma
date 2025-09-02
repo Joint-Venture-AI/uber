@@ -1,32 +1,38 @@
 model User {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  fcmToken  String?
-  role      EUserRole @default(GUEST)
-  name      String?
-  email     String    @unique
-  phone     String?
-  avatar    String?
-  address   String?
-  rating    Float     @default(0)
-  socials   TSocial[]
-  Auth      Auth?
-  Otp       Otp?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role     EUserRole?
+  email    String?
+  phone    String?
+  password String
+
+  avatar String @default("/images/default-avatar.png")
+  name   String @default("Unknown")
+
+  nid_number     String?
+  payment_method String?
+  driver_info    TDriverInfo?
+
+  is_verified Boolean @default(false)
+  is_active   Boolean @default(false)
+  is_admin    Boolean @default(false)
+
+  otp            String?
+  otp_expires_at DateTime?
 
   @@map("users")
 }
 
-type TSocial {
-  platform  String
-  link      String
-  followers Int    @default(0)
+enum EUserRole {
+  USER
+  DRIVER
 }
 
-enum EUserRole {
-  GUEST
-  USER
-  INFLUENCER
-  ADMIN
-  SUB_ADMIN
+type TDriverInfo {
+  business_contact String
+  driver_license   String
+  car_photo        String
+  car_name         String
 }
