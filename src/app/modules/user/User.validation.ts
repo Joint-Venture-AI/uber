@@ -7,14 +7,14 @@ export const UserValidations = {
     body: z.object({
       name: z
         .string({
-          required_error: 'Name is missing',
+          error: 'Name is missing',
         })
         .trim()
         .min(1, "Name can't be empty"),
 
       password: z
         .string({
-          required_error: 'Password is missing',
+          error: 'Password is missing',
         })
         .min(6, 'Password must be at least 6 characters long'),
     }),
@@ -34,13 +34,13 @@ export const UserValidations = {
     body: z.object({
       oldPassword: z
         .string({
-          required_error: 'Old Password is missing',
+          error: 'Old Password is missing',
         })
         .min(1, 'Old Password is required')
         .min(6, 'Old Password must be at least 6 characters long'),
       newPassword: z
         .string({
-          required_error: 'New Password is missing',
+          error: 'New Password is missing',
         })
         .min(1, 'New Password is required')
         .min(6, 'New Password must be at least 6 characters long'),
@@ -54,7 +54,7 @@ export const UserValidations = {
         .string()
         .optional()
         .transform(enum_encode)
-        .pipe(z.nativeEnum(EUserRole).optional()),
+        .pipe(z.enum(EUserRole).optional()),
     }),
   }),
 };

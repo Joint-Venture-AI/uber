@@ -11,6 +11,7 @@ const avatarCapture = capture({
   avatar: {
     size: 5 * 1024 * 1024,
     maxCount: 1,
+    fileType: 'images',
   },
 });
 
